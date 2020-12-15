@@ -1,0 +1,109 @@
+---
+title: "Report"
+author: "JIANGYUE MAO"
+date: "August 19, 2020"
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{subfig}
+output: 
+  bookdown::pdf_document2:
+    keep_tex: true
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(knitr)
+library(bookdown)
+library(kableExtra) 
+```
+
+
+
+# Description
+
+A study is conducted on an experiment to figure out the problem: how does the distance between the hand and the head of the chopstick (10 cm vs. 15 cm) and the sides of hands (ie. left or right) affect the total time needed to pick up all red beans in a bowl by chopsticks? The significance of the experiment is that it can demonstrate the dexterity difference of my different hand to inform me of the development levels of different parts of my brain preliminarily, since different parts of brains have specific functions to control different parts of our body.  
+I perform the experiments respectively with my left hand and right hand. In either experiment, two distances of 15cm (Fig.1,Fig.3) and 10cm (Fig.2,Fig.4) are set between the thumb and the chopstick head. Therefore, two influencing factors (distance as well as right or left hand) exist with each experiment. I perform 5 repetitions for each factor in the order randomized by R script prior to the measurement session since my hand may tire out if I keep using the same hand, affecting the amount of time needed to pick up all beans. The total number of experiments are 2ˆ2*5=20.     
+During the experiments, the same beans (20 beans in total) are used to reduce the bias caused by the bean difference. And after each experiment I pause for at least 5 minutes to relax my hand to reduce the bias caused by fatigue. Since the experiments are time consuming (around 100 minutes ), it is conducted in the absence of direct sunlight to avoid any bias brought by the sunlight.
+```{r fig1, out.width=".2\\linewidth", fig.width=5,fig.asp=1,fig.cap="experiment methods",fig.subcap=c("right 15cm", "right 10cm","left 15cm","left 10cm","timing by phone")}
+include_graphics('Figure 1.png')
+include_graphics('Figure 2.png')
+include_graphics('Figure 3.png')
+include_graphics('Figure 4.png')
+include_graphics('Figure 5.png')
+```
+
+\pagebreak
+# Analysis
+```{r fig, echo=FALSE, fig.width=5, fig.asp=1, fig.cap="Data overview", fig.subcap=c("Outcomes of four different experiments", "effects of two factors by boxplot"), fig.ncol=2, out.width=".3\\linewidth", fig.align="center"}
+hand<-c(rep("1",5),rep("-1",5),rep("1",5),rep("-1",5))
+distance<-c(rep("1",5),rep("1",5),rep("-1",5),rep("-1",5))
+X<-c(1:20)
+e<-data.frame(X,hand,distance)
+library(dplyr)
+set.seed(1003928039)
+e1<-sample_n(e, 20)
+re<-c(31.47,48.52,46.38,42.56,33.94,27.8,29.56,36.38,38.3,35.34,39.51,39.53,34.76,41.56,33.28,43.7,43.06,38.69,41.18,41.45)
+dat<-data.frame(e1,re)
+plot(dat$re, frame.plot = FALSE,
+     pch = ifelse(dat$hand == "1",
+                  20, 4),
+     col = ifelse(dat$distance == "1",
+                  6, 4))
+boxplot(re~hand+distance,data=dat)
+```
+An overview of data is shown to begin the analysis. In plot (a) of Fig.2, the pink represents the time taken in the case of 15cm distance; the blue represents the time taken in the case of 10 cm distance; the point represents the time taken in the case of left hand and the cross represents the time taken in the case of right hand. We find that the time needed for the right hand to pick up beans seems to be shorter than the case for the left hand, and the time needed in the case of 10 cm distance is relatively shorter than in the case of 15 cm distance. And plot (b) shows a similar pattern, with some obvious overlaps of the outcomes. However, some overlapping of total time makes it difficult for us to determine the effects of hands and distances only by the medians. Therefore, further analysis is necessary to see if there is a significant time difference in the two experiments with the left hand and the right hand, and in the two experiments with the distance of 15 cm and 10 cm.  
+```{r fig2, echo=FALSE, fig.width=7, fig.asp=1, fig.cap="Overall effects",fig.subcap=c("Interaction between hands and distances", "QQ plot"), fig.ncol=2, out.width=".3\\linewidth", fig.align="center"}
+interaction.plot(dat$hand,dat$distance,dat$re, type = "l",
+                 xlab = "Hand effect",trace.label = "Distance",
+                 ylab = "Mean time")
+mod<- lm(re~hand*distance,data = dat)
+qqnorm(mod$residuals,frame.plot=FALSE)
+qqline(mod$residuals,lty=2,col="coral")
+```
+To see the interaction effects more specifically, we further build an interaction plot. In Figure 3, the two lines of distance do not make an intersection, and they are not strictly parallel either, which means there are small interactions of hand and distance factors. And in order to check the distribution of the data, a linear model between total picking up time and the left-or-right-hand as well as distances is used to construct a QQ plot. In Plot (b), the deviation of some points not far enough from the qq line demonstrates an approximately normal distribution with a nearly constant variance. Therefore, further tests can be conducted based on these assumptions (such as T test).
+```{r tab3, echo=FALSE, tab.asp=1}
+library(BsMD)
+kable_styling(kable(coef(summary(mod)), booktabs = TRUE,
+      caption = "Summary of linear model of total time with hands and distances"),position="center")%>%
+  kable_styling(latex_options = "HOLD_position")
+kable_styling(kable(round(2*cbind(mod$coef, confint(mod)),2)[-1,], booktabs = TRUE,
+      caption = "confidence interval of hands,distances and their interactions"),position="center")%>%
+  kable_styling(latex_options = "HOLD_position")
+
+```
+A quantitative analysis of the effects based on the summary of the linear model of Table 1 is in need. And we find that the difference between the effects with left hand and right hand is about 12.68, and the p value is less than 0.05, meaning that we have strong evidence at 5% significant level to reject the null hypothesis that the coefficient of hand variable should be 0. Hence, we conclude that the left-or-right-hand factor has an effect on the outcomes. Moreover, the difference with the distance cases is around 17.196, with a p value less than 0.05 and significance at 5% level, implying that the distance of 10 cm leads to a 17 sec longer time of picking up beans than the distance of 15 cm. Since the interaction effect between the two factors is about -4 and the p value is around 0.46, not significant at 5% level, we can conclude that the interaction does not have a significant impact on the total time. There also exists the standard error of the main effects of around 1.85, less than that of interaction effect. In addition, we build the confidence intervals (Table 2) for the three effects and find 0 is not in the confidence intervals of hand and distance, implying that hand and distance do have a very significant impact on the total time of picking up beans, whereas 0 is incorporated in the confidence interval of interaction effects, meaning that the interaction effect is not strong toward the outcomes
+```{r tab4, echo=FALSE, tab.asp=1}
+a<-subset(dat$re, dat$hand == "1"&dat$distance=="1")
+b<-subset(dat$re, dat$hand == "1"&dat$distance=="-1")
+t1<-t.test(a, b,
+       var.equal = TRUE,
+       alternative = 'two.sided',paired = FALSE)
+c<-subset(dat$re, dat$distance=="1" &dat$hand=="1")
+d<-subset(dat$re, dat$distance=="1"&dat$hand=="-1")
+t2<-t.test(c, d,
+       var.equal = TRUE,
+       alternative = 'two.sided',paired = TRUE)
+e<-subset(dat$re, dat$hand == "-1"&dat$distance=="1")
+f<-subset(dat$re, dat$hand == "-1"&dat$distance=="-1")
+t3<-t.test(e, f,
+       var.equal = TRUE,
+       alternative = 'two.sided',paired = FALSE)
+g<-subset(dat$re, dat$distance=="-1" &dat$hand=="1")
+h<-subset(dat$re, dat$distance=="-1"&dat$hand=="-1")
+t4<-t.test(g, h,
+       var.equal = TRUE,
+       alternative = 'two.sided',paired = TRUE)
+library(broom)
+library(purrr)
+tab <- map_df(list(t1, t3, t2,t4), tidy)
+kable_styling(kable(data.frame(tab)[1:8],caption = "T test results under different conditions") )%>%
+  kable_styling(latex_options = "HOLD_position")
+```
+Furthermore, to further investigate the time difference with the four experiments, we perform paired T tests to see the differences with left-or-right-hand cases and unpaired T tests for differences with distance cases. The four two-sided T tests are based on the four combinations of hand and distance variables. Table 3 is aligned by rows of left hand + distance differences, right hand + distance differences, 15cm + hand differences, 10cm + hand differences. The less than 0.05 pvalue from the first row in Table 3 supports our rejection of the null hypothesis, therefore we conclude that the true difference in means is not equal to 0, which demonstrates that the time differences caused by distances, and the mean of time under 15cm of distance is about 6.6 sec longer than that of distance of 10 cm with left hand. Similarly, from the second row we can conclude that with right hand case, the differences in distances can lead to a difference of around 8.6 sec in total time. The time differences might not be accurate enough since the sample size is relatively small. Similar differences are shown with the case of 10 cm by the left hand and the right hand due to the small p value. However, with the 15cm case the p value is greater than 0.1, and 0 is included in the confidence interval, indicating there are no significant differences using the left or the right hand, and we do not have enough evidence to reject the null hypothesis of means being 0. 
+
+\pagebreak
+# Conclusions and Discussions
+
+Overall, there exist differences with the effects in left-or-right-hand cases and the two distance cases. The right hand tends to pick up beans faster than the left hand and 10 cm distance benefits more than 15 cm distance. And further data analysis makes it clear that the distances between the chopstick head and the thumb, the left or right hand, and their interactions do have different impacts on the total time of picking up red beans. I tend to pick up beans more quickly with 10 cm distance by either hand. This is an unexpected result, since I’m used to using chopsticks at the distance of 15 cm in my daily life, but it might still be reasonable because controlling small angles for the beans is easier with 10 cm than 15cm. Although the interaction effect tends to be insignificant, the main effects with hand cases depend on the distances. Specifically with the distance of 10cm, it is statistically significant that I can pick up beans much faster by the right hand than the left, whereas with 15 cm distance there is less evidence to show that there exists a big difference with the outcomes of the right and left hand. This makes sense since I’m used to using chopsticks with my right hand.    
+In conclusion, the result difference caused by the right and left hand operation suggests that the left part of my brain is more developed than the right part. And since I can pick up beans faster with the distance of 10 cm compared to 15 cm, it may be right that I should use chopsticks at the distance of 10 cm instead of 15 cm in my future life. However, in order to reach a more precise result, more experiments are needed, since the dataset is not large enough in my study with only two factors at two levels and 20 experiments in all. And I’ve made many assumptions that might not be true such as the case the data going to be Normally distributed if we perform it infinite number of times for the T test, but it might be hard to see this pattern under this small sample size. And I also assume the time duration between starting the timing clock and the time that I start the experiment would be 0 or consistent each time. Similarly, I assume the time duration between finishing the experiment and ending the clock would be 0 (ie. end at the same time). And I assume the posture that I use each time is exactly the same. These assumptions are not really true but I take the inconsistency as negligible things for the purpose of the experiment.
